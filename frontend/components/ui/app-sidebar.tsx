@@ -1,5 +1,7 @@
 "use client"
 
+import React from "react"
+
 import { ListTodo, Search, Settings, ChevronUp, Archive, Moon, Sun, Palette, MonitorCog, User,LogOut} from "lucide-react"
 import { useTheme } from "next-themes"
 
@@ -14,7 +16,7 @@ import {
     SidebarMenu,
     SidebarMenuButton,
     SidebarMenuItem,
-    SidebarProvider
+    SidebarMenuAction
 } from "@/components/ui/sidebar"
 
 import {
@@ -31,14 +33,6 @@ import {
     DropdownMenuSubContent
   } from "@/components/ui/dropdown-menu"
 
-import {
-    ContextMenu,
-    ContextMenuContent,
-    ContextMenuItem,
-    ContextMenuTrigger,
-  } from "@/components/ui/context-menu"
-  
-
 // Menu items.
 const items = [
     {
@@ -51,89 +45,90 @@ const items = [
         url: "#",
         icon: Archive,
     },
-    {
-        title: "Pesquisar",
-        url: "#",
-        icon: Search,
-    },
+    // {
+    //     title: "Pesquisar",
+    //     url: "#",
+    //     icon: Search,
+    // },
 ]
 
 export function AppSidebar() {
     const {setTheme} = useTheme()
+    const [isCollapsed, setIsCollapsed] = React.useState(false)
     return (
-        <Sidebar>
+            <Sidebar collapsible="icon" className="w-[--width]" style={{"--width": isCollapsed ? "4rem" : "16rem"} as React.CSSProperties} >
             <SidebarContent>
-                    <SidebarGroup>
-                        <SidebarHeader>
-                            <SidebarGroupLabel>Application</SidebarGroupLabel>
-                        </SidebarHeader>
-                        <SidebarContent/>
-                        <SidebarGroupContent>
-                            <SidebarMenu >
-                                {items.map((item) => (
-                                    <SidebarMenuItem key={item.title} className="mb-2">
-                                        <SidebarMenuButton asChild>
-                                            <a href={item.url}>
-                                                <item.icon />
-                                                <span>{item.title}</span>
-                                            </a>
-                                        </SidebarMenuButton>
+            <SidebarGroup className="group-data-[collapsible=icon]">
+            <SidebarHeader>
+                <SidebarGroupLabel>NY</SidebarGroupLabel>
+            </SidebarHeader>
+            <SidebarContent/>
+            <SidebarGroupContent>
+                <SidebarMenu >
+                    {items.map((item) => (
+                        <SidebarMenuItem key={item.title} className="mb-2">
+                            <SidebarMenuButton className= "dark:hover:text-indigo-500 hover:text-indigo-600"  asChild>
+                                <a href={item.url}>
+                                    <item.icon />
+                                    <span>{item.title}</span>
+                                </a>
+                            </SidebarMenuButton>
+                        </SidebarMenuItem>
+                    ))}
+                </SidebarMenu>
+            </SidebarGroupContent>
+            </SidebarGroup>
+            </SidebarContent>
+                <SidebarFooter>
+                <SidebarMenu>
+                    <SidebarMenuItem>
+                        <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                                <SidebarMenuButton>
+                                    <Settings/> Configurações
+                                    <ChevronUp className="ml-auto" />
+                                    </SidebarMenuButton>
+                                    </DropdownMenuTrigger>
+                                        <DropdownMenuContent side="top" className="w-[--radix-popper-anchor-width]" align="end">
+                                            <DropdownMenuLabel> Minha Conta </DropdownMenuLabel>
+                                            <DropdownMenuSeparator />
+                                            <DropdownMenuGroup>
+                                                <DropdownMenuItem>
+                                                    <User/> 
+                                                        <span>Perfil</span>
+                                                </DropdownMenuItem>
+                                                    <DropdownMenuSub>
+                                                    <DropdownMenuSubTrigger>
+                                                        <Palette/>
+                                                        <span> Temas </span>
+                                                        </DropdownMenuSubTrigger>
+                                                        <DropdownMenuPortal>
+                                                            <DropdownMenuSubContent>
+                                                            <DropdownMenuItem onClick={() => setTheme("light")}>
+                                                                <Sun/>
+                                                                <span> Light </span>
+                                                                </DropdownMenuItem>
+                                                        <DropdownMenuItem onClick={() => setTheme("dark")}>
+                                                                <Moon/>
+                                                            <span> Dark </span>
+                                                        </DropdownMenuItem>
+                                            <DropdownMenuItem onClick={() => setTheme("system")}>
+                                                <MonitorCog/>
+                                                <span> System </span>
+                                            </DropdownMenuItem>
+                                            </DropdownMenuSubContent>
+                                            </DropdownMenuPortal>
+                                            </DropdownMenuSub>
+                                            <DropdownMenuItem>
+                                                <LogOut/> 
+                                                <span> Sair </span>
+                                            </DropdownMenuItem>
+                                            </DropdownMenuGroup>
+                                            </DropdownMenuContent>
+                                        </DropdownMenu>
                                     </SidebarMenuItem>
-                                ))}
-                            </SidebarMenu>
-                        </SidebarGroupContent>
-                        </SidebarGroup>
-                        </SidebarContent>
-                            <SidebarFooter>
-                            <SidebarMenu>
-                                <SidebarMenuItem>
-                                    <DropdownMenu>
-                                        <DropdownMenuTrigger asChild>
-                                            <SidebarMenuButton>
-                                                <Settings/> Configurações
-                                                <ChevronUp className="ml-auto" />
-                                                </SidebarMenuButton>
-                                                </DropdownMenuTrigger>
-                                                    <DropdownMenuContent side="top" className="w-[--radix-popper-anchor-width]" align="end">
-                                                        <DropdownMenuLabel> Minha Conta </DropdownMenuLabel>
-                                                        <DropdownMenuSeparator />
-                                                        <DropdownMenuGroup>
-                                                            <DropdownMenuItem>
-                                                               <User/> 
-                                                                 <span>Perfil</span>
-                                                            </DropdownMenuItem>
-                                                                <DropdownMenuSub>
-                                                                <DropdownMenuSubTrigger>
-                                                                    <Palette/>
-                                                                    <span> Temas </span>
-                                                                    </DropdownMenuSubTrigger>
-                                                                    <DropdownMenuPortal>
-                                                                        <DropdownMenuSubContent>
-                                                                        <DropdownMenuItem onClick={() => setTheme("light")}>
-                                                                            <Sun/>
-                                                                            <span> Light </span>
-                                                                            </DropdownMenuItem>
-                                                                    <DropdownMenuItem onClick={() => setTheme("dark")}>
-                                                                            <Moon/>
-                                                                        <span> Dark </span>
-                                                                    </DropdownMenuItem>
-                                                        <DropdownMenuItem onClick={() => setTheme("system")}>
-                                                            <MonitorCog/>
-                                                            <span> System </span>
-                                                        </DropdownMenuItem>
-                                                        </DropdownMenuSubContent>
-                                                        </DropdownMenuPortal>
-                                                        </DropdownMenuSub>
-                                                        <DropdownMenuItem>
-                                                            <LogOut/> 
-                                                            <span> Sair </span>
-                                                        </DropdownMenuItem>
-                                                        </DropdownMenuGroup>
-                                                        </DropdownMenuContent>
-                                                    </DropdownMenu>
-                                                </SidebarMenuItem>
-                                            </SidebarMenu>
-                                        </SidebarFooter>
-                                    </Sidebar>
+                                </SidebarMenu>
+                            </SidebarFooter>
+                        </Sidebar>
             )
           }

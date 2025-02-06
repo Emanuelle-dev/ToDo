@@ -1,9 +1,7 @@
-export default function Page(){
- 
-    return(
-    <div>
-        hello word
-    </div>
+import KanbanBoard from "../../components/ui/kanban-board";
 
-    )
-}   
+const Index = () => {
+  return <KanbanBoard />;
+};
+
+export default Index;

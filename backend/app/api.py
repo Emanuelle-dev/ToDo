@@ -1,5 +1,5 @@
 from ninja import Router
-from .models import Task
+from .models import Task, User
 from .schemas import TaskSchema, CreateTaskSchema
 
 api = Router()
@@ -23,8 +23,26 @@ def get_task(request, task_id: int):
 def create_task(request, task: CreateTaskSchema):
     if not task.title:
         return 400, {"message": "Title is required"}
-    task = Task.objects.create(**task.dict())
-    return task
+    try:
+        user = User.objects.get(id=task.user_id)
+    except User.DoesNotExist:
+        return 400, {"message": "User not found"}
+    task_instance = Task.objects.create(
+        user_id=user, 
+        title=task.title, 
+        description=task.description, 
+        priority=task.priority, 
+        status=task.status, 
+        deadline=task.deadline)
+    return {
+        "user_id": user.id, 
+        "title": task_instance.title,
+        "description": task_instance.description,
+        "priority": task_instance.priority,
+        "status": task_instance.status,
+        "deadline": task_instance.deadline,
+        "tag": task_instance.tag
+    }
 
 @api.put("/tasks/{task_id}", response={200: CreateTaskSchema, 404: dict, 400: dict})
 def update_task(request, task_id: int, task_data: CreateTaskSchema):
