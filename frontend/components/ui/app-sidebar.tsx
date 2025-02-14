@@ -32,6 +32,7 @@ import {
     DropdownMenuPortal,
     DropdownMenuSubContent
   } from "@/components/ui/dropdown-menu"
+import { signOut } from "@/app/lib/auth-client"
 
 // Menu items.
 const items = [
@@ -119,7 +120,7 @@ export function AppSidebar() {
                                             </DropdownMenuSubContent>
                                             </DropdownMenuPortal>
                                             </DropdownMenuSub>
-                                            <DropdownMenuItem>
+                                            <DropdownMenuItem onClick={signOut}>
                                                 <LogOut/> 
                                                 <span> Sair </span>
                                             </DropdownMenuItem>
