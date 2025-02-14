@@ -40,11 +40,11 @@ const items = [
         url: "#",
         icon: ListTodo,
     },
-    {
-        title: "Arquivadas",
-        url: "#",
-        icon: Archive,
-    },
+    // {
+    //     title: "Arquivadas",
+    //     url: "#",
+    //     icon: Archive,
+    // },
     // {
     //     title: "Pesquisar",
     //     url: "#",
@@ -60,7 +60,7 @@ export function AppSidebar() {
             <SidebarContent>
             <SidebarGroup className="group-data-[collapsible=icon]">
             <SidebarHeader>
-                <SidebarGroupLabel>NY</SidebarGroupLabel>
+                <SidebarGroupLabel className="text-lg">Next Level</SidebarGroupLabel>
             </SidebarHeader>
             <SidebarContent/>
             <SidebarGroupContent>

@@ -4,12 +4,10 @@ from ninja import Schema, ModelSchema
 from .models import Task
 
 class CreateTaskSchema(Schema):
-    user_id: int
     title : str
     description : str
     priority : Literal['low', 'medium', 'normal', 'high'] = 'normal'
-    deadline : datetime
-    status : Literal['pending','in_progress', 'overdue', 'completed'] = 'pending'
+    status : Literal['pending','in_progress', 'completed'] = 'pending'
     tag : Optional[str] = None
 
 class TaskSchema(ModelSchema):

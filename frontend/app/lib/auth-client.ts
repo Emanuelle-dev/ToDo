@@ -7,3 +7,10 @@ export const signIn = async () => {
         callbackURL: ""
     })
 }
+
+export const signInWithGoogle = async () => {
+     await authClient.signIn.social({
+        provider: "google",
+        callbackURL: ""
+    })
+}
