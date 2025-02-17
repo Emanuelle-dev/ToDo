@@ -7,7 +7,7 @@ export const useCreateTask = () => {
     const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (values: {title: string; description: string; priority: "low" | "medium" | "normal" | "high"; status: "pending" | "in_progress" | "completed"; tag: string }) =>
+    mutationFn: (values: {title: string; description: string; priority: "low" | "medium" | "normal" | "high"; status: "pending" | "in_progress" | "completed"; tag?: string }) =>
       DefaultService.appApiCreateTask ({ requestBody: values }),
       onSuccess: () => {
       toast.success("Novo card adicionado com sucesso!", {

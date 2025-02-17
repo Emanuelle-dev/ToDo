@@ -39,7 +39,7 @@ export function SelectPriorityForm({ onSelectPriority }: { onSelectPriority: (va
     toast({
       title: "Priority Selected",
       description: (
-        <pre className="mt-2 w-[340px] rounded-md bg-slate-950 p-4">
+        <pre className="mt-2 w-[100px] rounded-md bg-slate-950 p-2">
           <code className="text-white">{JSON.stringify(data, null, 2)}</code>
         </pre>
       ),
@@ -48,7 +48,7 @@ export function SelectPriorityForm({ onSelectPriority }: { onSelectPriority: (va
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="w-full space-y-6">
+      <form onSubmit={form.handleSubmit(onSubmit)} className="w-24 gap-6">
         <FormField
           control={form.control}
           name="priority"

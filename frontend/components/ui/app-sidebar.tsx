@@ -1,6 +1,6 @@
 "use client"
 
-import React from "react"
+import React, { useState } from "react"
 
 import { ListTodo, Search, Settings, ChevronUp, Archive, Moon, Sun, Palette, MonitorCog, User,LogOut} from "lucide-react"
 import { useTheme } from "next-themes"
@@ -32,7 +32,8 @@ import {
     DropdownMenuPortal,
     DropdownMenuSubContent
   } from "@/components/ui/dropdown-menu"
-import { signOut } from "@/app/lib/auth-client"
+import { createAuthClient } from "better-auth/client"
+import {useRouter} from "next/navigation"
 
 // Menu items.
 const items = [
@@ -53,11 +54,19 @@ const items = [
     // },
 ]
 
+
+
 export function AppSidebar() {
     const {setTheme} = useTheme()
-    const [isCollapsed, setIsCollapsed] = React.useState(false)
+    const [isCollapsed, setIsCollapsed] = useState(false)
+    const authClient = createAuthClient()
+    const router = useRouter()
+    const signOut = async () => {
+        await authClient.signOut();
+        router.push("/sign-in");
+    }
     return (
-            <Sidebar collapsible="icon" className="w-[--width]" style={{"--width": isCollapsed ? "4rem" : "16rem"} as React.CSSProperties} >
+            <Sidebar collapsible="icon" className="w-[--width]" style={{"--width": isCollapsed ? "4rem" : "12rem"} as React.CSSProperties} >
             <SidebarContent>
             <SidebarGroup className="group-data-[collapsible=icon]">
             <SidebarHeader>
@@ -95,32 +104,32 @@ export function AppSidebar() {
                                             <DropdownMenuSeparator />
                                             <DropdownMenuGroup>
                                                 <DropdownMenuItem>
-                                                    <User/> 
-                                                        <span>Perfil</span>
+                                                    {/* <User/> 
+                                                        <span>Perfil</span> */}
                                                 </DropdownMenuItem>
                                                     <DropdownMenuSub>
-                                                    <DropdownMenuSubTrigger>
-                                                        <Palette/>
+                                                    <DropdownMenuSubTrigger className="dark:hover:bg-secondary">
+                                                        <Palette />
                                                         <span> Temas </span>
                                                         </DropdownMenuSubTrigger>
                                                         <DropdownMenuPortal>
                                                             <DropdownMenuSubContent>
-                                                            <DropdownMenuItem onClick={() => setTheme("light")}>
+                                                            <DropdownMenuItem onClick={() => setTheme("light")} className="dark:hover:bg-secondary">
                                                                 <Sun/>
                                                                 <span> Light </span>
                                                                 </DropdownMenuItem>
-                                                        <DropdownMenuItem onClick={() => setTheme("dark")}>
+                                                        <DropdownMenuItem onClick={() => setTheme("dark")} className="dark:hover:bg-secondary">
                                                                 <Moon/>
                                                             <span> Dark </span>
                                                         </DropdownMenuItem>
-                                            <DropdownMenuItem onClick={() => setTheme("system")}>
+                                            <DropdownMenuItem onClick={() => setTheme("system")} className="dark:hover:bg-secondary hover:bg-red-300">
                                                 <MonitorCog/>
                                                 <span> System </span>
                                             </DropdownMenuItem>
                                             </DropdownMenuSubContent>
                                             </DropdownMenuPortal>
                                             </DropdownMenuSub>
-                                            <DropdownMenuItem onClick={signOut}>
+                                            <DropdownMenuItem onClick={signOut} className="dark:hover:bg-secondary">
                                                 <LogOut/> 
                                                 <span> Sair </span>
                                             </DropdownMenuItem>

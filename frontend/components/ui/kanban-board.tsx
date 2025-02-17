@@ -2,13 +2,12 @@
 import React, { useEffect, useState } from "react";
 import { DragDropContext } from "@hello-pangea/dnd";
 import KanbanColumn from "../ui/kanban-column";
-import { Bold, Italic, Plus, Underline } from "lucide-react";
+import {  Plus } from "lucide-react";
 import { Button } from "../ui/button";
 import { useToast } from "../../hooks/use-toast";
 import { Input } from "./input";
 import { Sheet, SheetClose, SheetContent, SheetDescription, SheetFooter, SheetHeader, SheetTitle, SheetTrigger } from "./sheet";
 import { Label } from "./label";
-import { Textarea } from "./textarea";
 import { ScrollArea } from "./scroll-area";
 import { useQuery } from "@tanstack/react-query";
 import { DefaultService } from "../../services/sdk.gen";
@@ -16,9 +15,12 @@ import { useUpdateTask } from "@/hooks/api/useUpdateTask";
 import { useDeleteTask } from "@/hooks/api/useDeleteTask";
 import { useCreateTask } from "@/hooks/api/useCreateTask";
 import { SelectPriorityForm } from "./select-priority";
-import { ToggleGroup, ToggleGroupItem } from "./toggle-group";
-import { create } from "domain";
-import { TagInput, Tag } from "emblor";
+import { TagInput } from "emblor";
+import { useEdgeStore } from "@/app/lib/edgestore";
+import Link from "next/link";
+import { FileState, MultiFileDropzone } from "./dropzone-image";
+import { UploadAbortedError } from '@edgestore/react/errors';
+import TaskEditor from "./tiptap";
 
 export type Card = {
     id: string;
@@ -53,9 +55,34 @@ const initialColumns: Column[] = [
     },
 ];
 
-const KanbanBoard = () => {
+function KanbanBoard() {    
+    const [searchTerm, setSearchTerm] = useState("");
     const [columns, setColumns] = useState<Column[]>(initialColumns);
-    const { toast } = useToast();
+    const [file, setFile] = useState<File>();
+    const {edgestore} = useEdgeStore();
+    const [urls, setUrls] = useState<{
+        url: string;
+        thumbnailUrl: string | null;
+    }>();
+    const [uploadRes, setUploadRes] = React.useState<
+    {
+      url: string;
+      filename: string;
+    }[]
+  >([]);
+    const [fileStates, setFileStates] = useState<FileState[]>([]);    
+    function updateFileState(key: string, changes: Partial<FileState>) {
+        setFileStates((prevStates) => {
+          return prevStates.map((fileState) => {
+            if (fileState.key === key) {
+              return { ...fileState, ...changes };
+            }
+            return fileState;
+          });
+        });
+      }
+
+
     const [taskTitle, setTaskTitle] = useState("")
     const [taskDescription, setTaskDescription] = useState("")
     const [taskPriority, setTaskPriority] = useState<"low" | "medium" | "normal" | "high">("normal")
@@ -67,21 +94,33 @@ const KanbanBoard = () => {
         italic: false,
         underline: false,
     });
-    const handleToggle = (type: "bold" | "italic" | "underline") => {
-        setFormat((prev) => ({ ...prev, [type]: !prev[type] }));
+
+    const [hoveredPosition, setHoveredPosition] = useState<Record<string, number>>({});
+    const [hoveredColumn, setHoveredColumn] = useState<Record<string, string | boolean>>({});
+    const handleMouseEnter = (columnId: string) => {
+        const columnIndex = columns.findIndex(col => col.id === columnId);
+        if (columnIndex === -1) return;
+    
+        const adjacentColumns = {
+            prev: columnIndex > 0 ? columns[columnIndex - 1].id : null,
+            next: columnIndex < columns.length - 1 ? columns[columnIndex + 1].id : null
+        };
+    
+        setHoveredColumn((prev) => ({
+            ...prev,
+            [columnId]: true,
+            ...(adjacentColumns.prev ? { [adjacentColumns.prev]: "adjacent" } : {}),
+            ...(adjacentColumns.next ? { [adjacentColumns.next]: "adjacent" } : {})
+        }));
     };
 
-    const applyFormatting = (text: string) => {
-        let formattedText = text;
-        if (format.bold) formattedText = `**${formattedText}**`;
-        if (format.italic) formattedText = `*${formattedText}*`;
-        if (format.underline) formattedText = `__${formattedText}__`;
-        return formattedText;
+    const handleMouseLeave = (columnId: string) => {
+        setHoveredColumn({});
+        setHoveredPosition({});
     };
+
+
     const maxLength = 200;
-
-    const [taskTag, setTaskTags] = useState<Tag[]>([]);
-
     // chamada de Apis
     // api de listar Tasks
     const { data: response } = useQuery({
@@ -124,9 +163,15 @@ const KanbanBoard = () => {
 
     //   // api de criar Tasks
 
+    const stripHtmlTags = (html: string) => {
+        return html.replace(/<\/?[^>]+(>|$)/g, ""); 
+    };
+
     const createTaskMutation = useCreateTask();
-    const handleAddTask = (task_id: number, title: string, description: string, priority: "low" | "medium" | "normal" | "high", status: "pending" | "in_progress" | "completed", tag: string) => {
-        createTaskMutation.mutate({ title, description, priority, status, tag });
+    const handleAddTask = (task_id: number, title: string, description: string, priority: "low" | "medium" | "normal" | "high", status: "pending" | "in_progress" | "completed") => {
+        const cleanDescription = stripHtmlTags(description);
+
+        createTaskMutation.mutate({ title, description: cleanDescription, priority, status});
     }
     // /////////////////////////////////////////////
 
@@ -189,6 +234,15 @@ const KanbanBoard = () => {
 
     return (
         <>
+                    <div className="absolute w-40 flex items-center">
+                    <Input
+                        className="flex-1 p-2 border rounded-md w-20 max-w-sm"
+                        placeholder="Pesquisar tarefas..."
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                    />
+                    </div>
+
             <DragDropContext onDragEnd={onDragEnd}>
                 <div className="w-full flex justify-center gap-4 mb-4">
                     {columns.map((column) => (
@@ -197,35 +251,48 @@ const KanbanBoard = () => {
                         </div>
                     ))}
                 </div>
-                <div className="w-full flex justify-center max-h-[500px]">
+                <div className="w-full flex justify-center h-[calc(90vh-100px)]">
                     {columns.map((column) => (
-                        <div key={column.id} className="flex flex-col gap-4 flex-1 max-h-[600px] min-w-[300px]  max-w-xl rounded-lg p-2 shadow-lg mx-2 shadow-indigo-500/50 ">
-                            <ScrollArea className="max-h-[500px] overflow-y-auto">
-                                <KanbanColumn
-                                    column={column}
-                                    onDelete={handleDeleteTask}
-                                    className="bg-card text-card-foreground justify-center rounded-lg shadow-lg p-4 w-full flex flex-col gap-2"
-                                />
+                        <div key={column.id} className={`flex flex-col gap-4 flex-1 h-full min-w-[300px] rounded-lg p-2 shadow-lg mx-2 shadow-indigo-500/50 hover:border-indigo-300 transition-all border-2 
+           ${hoveredColumn[column.id] === true ? "border-indigo-500 shadow-lg shadow-[rgba(89,0,130,0.47)]" : ""}
+        ${hoveredColumn[column.id] === "adjacent" ? " opacity-65" : ""}
+        ${!hoveredColumn[column.id] ? "border-transparent" : ""}
+    } `}
+         onMouseEnter={() => handleMouseEnter(column.id)} 
+         onMouseLeave={() => handleMouseLeave(column.id)}>
+                            <ScrollArea className="h-full overflow-y-auto ">
+                            <KanbanColumn
+                                column={{
+                                    ...column,
+                                    cards: column.cards.filter(card =>
+                                        card.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                                        card.description.toLowerCase().includes(searchTerm.toLowerCase())
+                                    )
+                                }}
+                                onDelete={handleDeleteTask}
+                                className=""
+                            />
                             </ScrollArea>
                         </div>
                     ))}
                 </div>
             </DragDropContext>
-            <div className="w-40 flex absolute bottom-4 left-2 hover:border-indigo-500">
-                <Sheet>
-                    <SheetTrigger asChild>
-                        <Button className="flex items-center">
-                            <Plus className="opacity-50 px-0" />
-                            Adicionar tarefa
-                        </Button>
-                    </SheetTrigger>
-                    <SheetContent className="max-w-lg mx-auto">
-                        <SheetHeader>
-                            <SheetTitle className="text-center font-semibold">Criar Tarefa</SheetTitle>
-                        </SheetHeader>
-                        <div className="space-y-4">
+
+                    <div className="absolute bottom-4 left-2">
+                        <Sheet>
+                            <SheetTrigger asChild>
+                                <Button className="flex items-center bg-red-300 hover:bg-red-400 dark:bg-white dark:hover:bg-white">
+                                    <Plus className="dark:opacity-50 px-0 dark:text-black text-red-900" />
+                                    <label className="text-red-950 dark:text-black">Adicionar tarefa</label> 
+                                </Button>
+                            </SheetTrigger>
+                            <SheetContent className="max-w-lg mx-auto">
+                                <SheetHeader>
+                                    <SheetTitle className="text-center font-semibold">Criar Tarefa</SheetTitle>
+                                </SheetHeader>
                             {/* Título */}
-                            <div className="grid grid-cols-1 gap-1">
+                            <div className="flex justify-between gap-4"> 
+                            <div className="flex flex-col w-56 gap-2">
                                 <Label className="mb-1" htmlFor="task-title">Título:</Label>
                                 <Input
                                     id="task-title"
@@ -233,15 +300,20 @@ const KanbanBoard = () => {
                                     onChange={(e) => setTaskTitle(e.target.value)}
                                 />
                             </div>
+                            <div className="flex flex-col gap-2 flex-1">
+                                <Label className="mb-1" >Prioridade:</Label>
+                                <SelectPriorityForm onSelectPriority={setSelectedPriority} />
+                            </div>
+                            </div>
 
                             {/* Descrição com opções de formatação */}
 
                             {/* Tags */}
-                            <div className="grid grid-cols-1 gap-1">
+                            {/* <div className="grid grid-cols-1 gap-1">
                                 <Label htmlFor="task-tags">Tags:</Label>
                                 <TagInput
                                     id="task-tags"
-                                    tags={taskTag}
+                                    tag={taskTag}
                                     setTags={(newTags) => setTaskTags(newTags)}
                                     placeholder="Adicionar tag"
                                     activeTagIndex={-1}
@@ -255,53 +327,81 @@ const KanbanBoard = () => {
                                         },
                                     }}
                                 />
-                            </div>
+                            </div> */}
 
                             {/* Prioridade */}
-                            <div className="grid grid-cols-1 gap-1">
-                                <Label>Prioridade:</Label>
-                                <SelectPriorityForm onSelectPriority={setSelectedPriority} />
-                            </div>
+                            <div className="grid grid-cols-1 gap-2 mb-2 mt-3">
+                            <Label className="gap-2">Descrição:</Label>
+                            <TaskEditor taskDescription={taskDescription} setTaskDescription={setTaskDescription} maxLength={maxLength} />
                         </div>
-                                    <div className="grid grid-cols-1">
-                                        <ToggleGroup type="multiple" className="flex mb-1">
-                                            <ToggleGroupItem
-                                                value="bold"
-                                                aria-label="Toggle bold"
-                                                onClick={() => handleToggle("bold")}
-                                                className={format.bold ? "bg-gray-300" : ""}
-                                            >
-                                                <Bold className="h-3 w-3" />
-                                            </ToggleGroupItem>
-                                            <ToggleGroupItem
-                                                value="italic"
-                                                aria-label="Toggle italic"
-                                                onClick={() => handleToggle("italic")}
-                                                className={format.italic ? "bg-gray-300" : ""}
-                                            >
-                                                <Italic className="h-3 w-3" />
-                                            </ToggleGroupItem>
-                                            <ToggleGroupItem
-                                                value="underline"
-                                                aria-label="Toggle underline"
-                                                onClick={() => handleToggle("underline")}
-                                                className={format.underline ? "bg-gray-300" : ""}
-                                            >
-                                                <Underline className="h-3 w-3" />
-                                            </ToggleGroupItem>
-                                        </ToggleGroup>
-                                        <Textarea
-                                            id="task-description"
-                                            value={applyFormatting(taskDescription)}
-                                            onChange={(e) => setTaskDescription(e.target.value)}
-                                            maxLength={200}
-                                            placeholder="Comentários"
-                                            className="w-full h-24"
-                                        />
-                            <div className="text-right text-sm text-gray-500">
-                                {taskDescription.length}/{maxLength} 
-                            </div>
-                                    </div>
+
+                        <div className = "flex flex-col gap-2 mt-3">
+                            <Label>Upload de arquivos:</Label>
+                        <MultiFileDropzone
+                            value={fileStates}
+                            dropzoneOptions={{
+                            maxFiles: 5,
+                            maxSize: 1024 * 1024 * 1, // 1 MB
+                            }}
+                            onChange={setFileStates}
+                            onFilesAdded={async (addedFiles) => {
+                            setFileStates([...fileStates, ...addedFiles]);
+                            }}
+                        />
+                            <Button
+                                    className="bg-white hover:bg-white "
+                                    onClick={async () => {
+                                    await Promise.all(
+                                        fileStates.map(async (fileState) => {
+                                        try {
+                                            if (fileState.progress !== 'PENDING') return;
+                                            const abortController = new AbortController();
+                                            updateFileState(fileState.key, { abortController });
+                                            const res = await edgestore.myPublicImages.upload({
+                                            file: fileState.file,
+                                            signal: abortController.signal,
+                                            onProgressChange: async (progress) => {
+                                                updateFileState(fileState.key, { progress });
+                                                if (progress === 100) {
+                                                // wait 1 second to set it to complete
+                                                // so that the user can see the progress bar
+                                                await new Promise((resolve) => setTimeout(resolve, 1000));
+                                                updateFileState(fileState.key, { progress: 'COMPLETE' });
+                                                }
+                                            },
+                                            });
+                                            setUploadRes((uploadRes) => [
+                                            ...uploadRes,
+                                            {
+                                                url: res.url,
+                                                filename: fileState.file.name,
+                                            },
+                                            ]);
+                                        } catch (err) {
+                                            console.error(err);
+                                            if (err instanceof UploadAbortedError) {
+                                            updateFileState(fileState.key, { progress: 'PENDING' });
+                                            } else {
+                                            updateFileState(fileState.key, { progress: 'ERROR' });
+                                            }
+                                        }
+                                        }),
+                                    );
+                                    }}
+                                    disabled={
+                                    !fileStates.filter((fileState) => fileState.progress === 'PENDING')
+                                        .length
+                                    }
+                                >
+                                   <label className="text-red-950 dark:text-black hover:bg-white">Upload</label> 
+                                </Button>
+                                {uploadRes.map((res, index) => (
+                                    <Link key={index} href={res.url} target="_blank" className="text-sm">
+                                        {res.filename}
+                                    </Link>
+                                ))}
+                                {/* {urls?.thumbnailUrl && <Link href={urls.thumbnailUrl} target="_blank">Thumbnail URL</Link>} */}
+                        </div>
                         {/* Botão Criar */}
                         <SheetFooter className="mt-4">
                             <SheetClose asChild>
@@ -312,19 +412,20 @@ const KanbanBoard = () => {
                                         taskDescription,
                                         (selectedPriority as "low" | "medium" | "normal" | "high") || "normal",
                                         taskStatus || "pending",
-                                        taskTag.join(", ")
-                                    )}
-                                    className="border rounded-xl w-28"
+                                        )}
+                                    className="border rounded-xl w-28 dark:bg-white bg-red-300 dark:hover:bg-white hover:bg-red-400"
                                 >
-                                    Salvar
+                                   <label className="dark:text-black text-red-950"> Salvar</label>
                                 </Button>
                             </SheetClose>
                         </SheetFooter>
                     </SheetContent>
                 </Sheet>
-            </div>
+                </div>
+               {/* </div>  */}
         </>
     );
 }
+
 
 export default KanbanBoard;

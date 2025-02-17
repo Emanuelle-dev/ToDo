@@ -5,6 +5,7 @@ class User(models.Model):
     name = models.CharField(max_length=200, blank=False)
     email = models.EmailField(max_length=200, blank=False)
     email_verified = models.BooleanField(default=False)
+    image = models.CharField(max_length=500, blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     
@@ -30,7 +31,9 @@ class Session(models.Model):
     id = models.CharField(primary_key=True, max_length=255, blank=False)
     user = models.ForeignKey(User, on_delete=models.PROTECT)
     token = models.CharField(max_length=500, blank=False)
-    expired_at = models.DateTimeField(blank=False)
+    expires_at = models.DateTimeField(blank=False)
+    ip_address = models.CharField(max_length=200, blank=True, null=True)
+    user_agent = models.CharField(max_length=200, blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(blank=True,null=True)
     
@@ -59,7 +62,7 @@ class Verification(models.Model):
     id = models.CharField(primary_key=True, max_length=255, blank=False)
     identifier = models.CharField(max_length=200, blank=False)
     value = models.CharField(max_length=500, blank=False)
-    expired_at = models.DateTimeField(blank=False)
+    expires_at = models.DateTimeField(blank=False)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(blank=False)
 

@@ -14,14 +14,14 @@ interface KanbanColumnProps {
 const KanbanColumn = ({column, className, onDelete }: KanbanColumnProps) => {
     console.log("Column:",column.title, column.cards)
     return (
-        <div className={`${className} flex flex-col gap-2 min-h-[400px]`} >
+        <div className={`${className}`} >
         <Droppable droppableId={column.id}>
             {(provided, snapshot) => (
                 <div
                     ref={provided.innerRef}
                     {...provided.droppableProps}
                     className={cn(
-                        "p-2 rounded-lg transition-all min-h-[400px]",
+                        "p-2 rounded-lg transition-all min-h-[500px]",
                         snapshot.isDraggingOver
                     )}
                 >

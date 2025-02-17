@@ -4,6 +4,7 @@ import "./globals.css"
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import Providers from "@/components/providers";
+import { EdgeStoreProvider } from "./lib/edgestore";
 
 
 export const metadata: Metadata = {
@@ -19,9 +20,11 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className="antialiased">
+    <EdgeStoreProvider>
           <Providers>
         {children}
         </Providers>
+      </EdgeStoreProvider>
 
       </body>
     </html>

@@ -1,6 +1,5 @@
 "use client"
 import { createAuthClient } from "better-auth/client"
-import router from "next/router"
 const authClient =  createAuthClient()
  
 export const signIn = async () => {
@@ -16,9 +15,4 @@ export const signInWithGoogle = async () => {
         provider: "google",
         callbackURL: ""
     })
-}
-
-export const signOut = async () => {
-    await authClient.signOut();
-    router.push("/sign-in");
 }
